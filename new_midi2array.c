@@ -418,19 +418,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 				indexD_t++;
 		}
 
-		// if (partE_time[indexE_t - 1] != (uint32_t)time_in_us		// ! maybe we shouldn't adjust
-		// 	&& partE_brightness[indexE_t - 1] != 0) {				// ! the brightness of strip (due to SPX)
-		// 		partE_time[indexE_t] = (uint32_t)time_in_us;	
-		// 		partE_brightness[indexE_t] = (data >> 8) & 0xff;
-		// 		indexE_t++;
-		// }
-
-		// if (partF_time[indexF_t - 1] != (uint32_t)time_in_us
-		// 	&& partF_brightness[indexF_t - 1] != 0) {
-		// 		partF_time[indexF_t] = (uint32_t)time_in_us;
-		// 		partF_brightness[indexF_t] = (data >> 8) & 0xff;
-		// 		indexF_t++;
-		// }
+		// don't adjust the brightness of strips due to SPX
 
 		break;
 

@@ -34,7 +34,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 			  double *us_per_tick, const int ticks_per_qnote);
 
 // change data to struct and return the len of array
-int data2struct(const char name, ws2812 *array);
+int data2struct(const char name, ws2812 array[ARRAY_SIZE]);
 
 // write the given structure array to an ouput header file
 void write2file(FILE **output, char name, ws2812 *array);
