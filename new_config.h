@@ -1,0 +1,6 @@
+#define partA 'A'
+#define partB 'B'
+#define partC 'C'
+#define partD 'D'
+#define partE 'E'
+#define partF 'F'

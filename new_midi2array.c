@@ -2,6 +2,7 @@
 
 #include "new_midi2array.h"
 #include "structure_of_ws2812.h"
+#include "new_config.h"
 #include <stdio.h>
 #include "stdint.h"
 #include "string.h"
@@ -305,87 +306,87 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 	switch (event) {
 	case 0:		// note off (turn off light)
 		switch (data & 0xff) {
-			// case partA:
+			case partA:
 				partA_time[indexA_t] = (uint32_t)time_in_us;
 				partA_brightness[indexA_t] = 0;
 				indexA_t++;
 				break;
 
-			// case partB:
+			case partB:
 				partB_time[indexB_t] = (uint32_t)time_in_us;
 				partA_brightness[indexB_t] = 0;
 				indexB_t++;
 				break;
 
-			// case partC:
+			case partC:
 				partC_time[indexC_t] = (uint32_t)time_in_us;
 				partC_brightness[indexC_t] = 0;
 				indexC_t++;
 				break;
 
-			// case partD:
+			case partD:
 				partD_time[indexD_t] = (uint32_t)time_in_us;
 				partD_brightness[indexD_t] = 0;
 				indexD_t++;
 				break;
 
-			// case partE:
+			case partE:
 				partE_time[indexE_t] = (uint32_t)time_in_us;
 				partE_brightness[indexE_t] = 0;
 				indexE_t++;
 				break;
 
-			// case partF:
+			case partF:
 				partF_time[indexF_t] = (uint32_t)time_in_us;
 				partF_brightness[indexF_t] = 0;
 				indexF_t++;
 				break;
 
 			default:
-				printf("something went wrong...\n");
+				printf("line 346: something went wrong...\n");
 		}
 		break;
 	
 	case 1:		// note on (turn on light)
 		switch (data & 0xff) {
-			// case partA:
+			case partA:
 				partA_time[indexA_t] = (uint32_t)time_in_us;
 				partA_brightness[indexA_t] = (data >> 8) & 0xff;
 				indexA_t++;
 				break;
 
-			// case partB:
+			case partB:
 				partB_time[indexB_t] = (uint32_t)time_in_us;
 				partA_brightness[indexB_t] = 0;
 				indexB_t++;
 				break;
 
-			// case partC:
+			case partC:
 				partC_time[indexC_t] = (uint32_t)time_in_us;
 				partC_brightness[indexC_t] = (data >> 8) & 0xff;
 				indexC_t++;
 				break;
 
-			// case partD:
+			case partD:
 				partD_time[indexD_t] = (uint32_t)time_in_us;
 				partD_brightness[indexD_t] = (data >> 8) & 0xff;
 				indexD_t++;
 				break;
 
-			// case partE:
+			case partE:
 				partE_time[indexE_t] = (uint32_t)time_in_us;
 				partE_brightness[indexE_t] = (data >> 8) & 0xff;
 				indexE_t++;
 				break;
 
-			// case partF:
+			case partF:
 				partF_time[indexF_t] = (uint32_t)time_in_us;
 				partF_brightness[indexF_t] = (data >> 8) & 0xff;
 				indexF_t++;
 				break;
 
 			default:
-				printf("something went wrong...\n");
+				printf("line 389: turn something else on...\n");
 		}
 		break;
 	
@@ -433,38 +434,38 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 
 	case 73:	// lyrics (change color, also the initialize brightness of single light)
 		switch (data & 0xff) {
-			// case partA:
+			case partA:
 				partA_color_time[indexA_c] = (uint32_t)time_in_us;
 				partA_color[indexA_c] = ((data >> 8) & 0xffffff);
 				indexA_c++;
 				break;
 			
-			// case partB:
+			case partB:
 				partB_color_time[indexB_c] = (uint32_t)time_in_us;
 				partB_color[indexB_c] = ((data >> 8) & 0xffffff);
 				indexB_c++;
 				break;
 
-			// case partC:
+			case partC:
 				partC_color_time[indexC_c] = (uint32_t)time_in_us;
 				partC_color[indexC_c] = ((data >> 8) & 0xffffff);
 				indexC_c++;
 				break;
 			
-			// case partD:
+			case partD:
 				partD_color_time[indexD_c] = (uint32_t)time_in_us;
 				partD_color[indexD_c] = ((data >> 8) & 0xffffff);
 				indexD_c++;
 				break;
 			
-			// case partE:
+			case partE:
 				partE_color_time[indexE_c] = (uint32_t)time_in_us;
 				partE_color[indexE_c] = ((data >> 8) & 0xffffff);
 				partE_SPX[indexE_c] = (data >> 32);
 				indexE_c++;
 				break;
 
-			// case partF:
+			case partF:
 				partF_color_time[indexF_c] = (uint32_t)time_in_us;
 				partF_color[indexF_c] = ((data >> 8) & 0xffffff);
 				partF_SPX[indexF_c] = (data >> 32);
@@ -480,7 +481,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 		break;
 	
 	default:
-		printf("something went wrong\n");
+		printf("line 484: some unused meta event occurs...\n");
 		break;
 	}
 }
@@ -493,7 +494,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 	// merge time info
     switch (name) {
-		// case partA:
+		case partA:
 			while (i < indexA_t && j < indexA_c) {
 				if (partA_time[i] == partA_color_time[j]) {
 					array[count].light.time = partA_time[i];
@@ -541,7 +542,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 			break;
 
-		// case partB:
+		case partB:
 			while (i < indexB_t && j < indexB_c) {
 				if (partB_time[i] == partB_color_time[j]) {
 					array[count].light.time = partB_time[i];
@@ -589,7 +590,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 			break;
 
-		// case partC:
+		case partC:
 			while (i < indexC_t && j < indexC_c) {
 				if (partC_time[i] == partC_color_time[j]) {
 					array[count].light.time = partC_time[i];
@@ -637,7 +638,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 			
 			break;
 
-		// case partD:
+		case partD:
 			while (i < indexD_t && j < indexD_c) {
 				if (partD_time[i] == partD_color_time[j]) {
 					array[count].light.time = partD_time[i];
@@ -685,7 +686,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 			break;
 
-		// case partE:
+		case partE:
 			while (i < indexE_t && j < indexE_c) {
 				if (partE_time[i] == partE_color_time[j]) {
 					array[count].strip.time = partE_time[i];
@@ -706,35 +707,59 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 						array[count].strip.SPX_type = 0;
 						i++;
 						count++;
-					} else if (partE_brightness[i - 1] == 0) {	// turn on (TBH I don't know it's allowed or not)
-						// ! communicate with the other group!!!
+					} else if (partE_brightness[i - 1] == 0) {	// turn on
+						printf("line 711: turn on command should be "
+							   "accompanied with lyrics\n");
 					} else {
-						printf("this shouldn't happen!!!\n");
+						printf("line 714: global brightness shouldn't effect strip\n");
 					}
 				} else {	// store color info first maybe this shouldn't happen...
-					// array[count].strip.time = partE_color_time[j];
-					// array[count].strip.red = (partE_color[j] & 0xff);
-					// array[count].strip.green = (partE_color[j] >> 8) & 0xff;
-					// array[count].strip.blue = (partE_color[j] >> 16) & 0xff;
-					// j++;
-					// count++;
+					printf("line 717: color info and turn on should be paired...\n");
 				}
 			}
-
-			// ! discuss the writing convention of strip
 
 			indexE_t = count - 1;
 
 			break;
 		
-		// case partF:
+		case partF:
+			while (i < indexF_t && j < indexF_c) {
+				if (partF_time[i] == partF_color_time[j]) {
+					array[count].strip.time = partF_time[i];
+					array[count].strip.red = (partF_color[j] & 0xff) * partF_brightness[i] / 255;
+					array[count].strip.green = ((partF_color[j] >> 8) & 0xff) * partF_brightness[i] / 255;
+					array[count].strip.blue = ((partF_color[j] >> 16) & 0xff) * partF_brightness[i] / 255;
+					array[count].strip.SPX_type = partF_SPX[j];
+					array[count].strip.SPX_duration = partF_color_time[j + 1] - partF_color_time[j];
+					i++;
+					j++;
+					count++;
+				} else if (partF_time[i] < partF_color_time[j]) {	// store brightness info (just turn on or off)
+					if (partF_brightness[i] == 0) {		// turn off
+						array[count].strip.time = partF_time[i];
+						array[count].strip.red = 0;
+						array[count].strip.green = 0;
+						array[count].strip.blue = 0;
+						array[count].strip.SPX_type = 0;
+						i++;
+						count++;
+					} else if (partF_brightness[i - 1] == 0) {	// turn on
+						printf("line 747: turn on command should be "
+							   "accompanied with lyrics\n");
+					} else {
+						printf("line 750: global brightness shouldn't effect strip\n");
+					}
+				} else {	// store color info first maybe this shouldn't happen...
+					printf("line 753: color info and turn on should be paired...\n");
+				}
+			}
 
 			indexF_t = count - 1;
 
 			break;
 
 		default:
-			printf("something went wrong...\n");
+			printf("line 762: some unused part was called...\n");
 	}
 }
 
@@ -742,7 +767,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 	int i;	// loop index
 
 	switch (name) {
-		// case partA:
+		case partA:
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexA_t);
 			for (i = 0; i < indexA_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -757,7 +782,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
 			break;
 
-		// case partB:
+		case partB:
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexB_t);
 			for (i = 0; i < indexB_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -772,7 +797,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
 			break;
 
-		// case partC:
+		case partC:
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexC_t);
 			for (i = 0; i < indexC_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -787,7 +812,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
 			break;
 
-		// case partD:
+		case partD:
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexD_t);
 			for (i = 0; i < indexD_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -802,7 +827,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
 			break;
 
-		// case partE:
+		case partE:
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexE_t);
 			for (i = 0; i < indexE_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -818,7 +843,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
 			break;
 
-		// case partF:
+		case partF:
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexF_t);
 			for (i = 0; i < indexF_t - 1; i++) {
 				if (i % 4 == 0) {
