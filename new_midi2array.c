@@ -241,7 +241,22 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		} else {
 			fread(&data_buffer[0], 1, 1, *midi_input);
 
+			// ! need to think clear...
 			switch (data_buffer[0]) {
+				case partA, partB, partC, partD:
+
+					break;
+
+				case partE:
+
+					break;
+
+				case partF:
+
+					break;
+				
+				default:
+					printf("line 270: lyric sets something weird...\n");
                 // use to decide the part
 			}
 			if (!data_buffer[0]) { // if no part selected, dump the rest
@@ -260,13 +275,13 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 			    data_buffer[i] = ascii_hex2value(tmp[0],tmp[1]);
             }
 
-            /*
-            if (data[0] == part which is strip) {
+            
+            if (data_buffer[0] == partE || data_buffer[0] == partF) {
                 fread(&tmp[0], 1, 1, *midi_input);
 			    fread(&tmp[1], 1, 1, *midi_input);
 			    data_buffer[4] = ascii_hex2value(tmp[0],tmp[1]);
             }
-            */
+           
 		}
 		break;
 
@@ -794,13 +809,13 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, ".light = {%d, %u, %u, %u}, ", array[i].light.time, array[i].light.red,
+				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
+			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
 		case partB:
@@ -809,13 +824,13 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, ".light = {%d, %u, %u, %u}, ", array[i].light.time, array[i].light.red,
+				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
+			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
 		case partC:
@@ -824,13 +839,13 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, ".light = {%d, %u, %u, %u}, ", array[i].light.time, array[i].light.red,
+				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
+			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
 		case partD:
@@ -839,13 +854,13 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, ".light = {%d, %u, %u, %u}, ", array[i].light.time, array[i].light.red,
+				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
+			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
 		case partE:
@@ -854,14 +869,14 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, ".strip = {%d, %u, %u, %u, %u, %u}, ", array[i].strip.time, array[i].strip.red,
+				fprintf(*output, "{.strip = {%d, %u, %u, %u, %u, %u}}, ", array[i].strip.time, array[i].strip.red,
 																		array[i].strip.green, array[i].strip.blue,
 																		array[i].strip.SPX_type, array[i].strip.SPX_duration);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
+			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
 		case partF:
@@ -870,14 +885,14 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, ".strip = {%d, %u, %u, %u, %u, %u}, ", array[i].strip.time, array[i].strip.red,
+				fprintf(*output, "{.strip = {%d, %u, %u, %u, %u, %u}}, ", array[i].strip.time, array[i].strip.red,
 																		array[i].strip.green, array[i].strip.blue,
 																		array[i].strip.SPX_type, array[i].strip.SPX_duration);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t.light = {-1, 0, 0, 0}};");
+			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 	}
 }
