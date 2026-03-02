@@ -275,9 +275,20 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		for ( ;data_length > 0; data_length--) {
 			fread(&dump, 1, 1, *midi_input);
 		}
+		break;
+
+	case 39: // fallthrough
+	case 126: // unsupported, discard 1 byte
+		fread(&dump, 1 - is_running, 1, *midi_input);
+		break;
+
+	case 127: // unsupported, discard 2 bytes
+		fread(&dump, 2 - is_running, 1, *midi_input);
+		break;
 
 	default:
 		printf("????\n");
+		break;
 	}
 
     /*
@@ -314,7 +325,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 
 			case partB:
 				partB_time[indexB_t] = (uint32_t)time_in_us;
-				partA_brightness[indexB_t] = 0;
+				partB_brightness[indexB_t] = 0;
 				indexB_t++;
 				break;
 
@@ -357,7 +368,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 
 			case partB:
 				partB_time[indexB_t] = (uint32_t)time_in_us;
-				partA_brightness[indexB_t] = 0;
+				partB_brightness[indexB_t] = (data >> 8) & 0xff;
 				indexB_t++;
 				break;
 
@@ -414,7 +425,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 
 		if (partD_time[indexD_t - 1] != (uint32_t)time_in_us
 			&& partD_brightness[indexD_t - 1] != 0) {
-				partD_time[indexB_t] = (uint32_t)time_in_us;
+				partD_time[indexD_t] = (uint32_t)time_in_us;
 				partD_brightness[indexD_t] = (data >> 8) & 0xff;
 				indexD_t++;
 		}
@@ -530,7 +541,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				count++;
 			}
 
-			while (i < indexA_c) {
+			while (j < indexA_c) {
 				array[count].light.time = partA_color_time[j];
 				array[count].light.red = (partA_color[j] & 0xff) * partA_brightness[indexA_t - 1] / 255;
 				array[count].light.green = ((partA_color[j] >> 8) & 0xff) * partA_brightness[indexA_t - 1] / 255;
@@ -578,7 +589,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				count++;
 			}
 
-			while (i < indexB_c) {
+			while (j < indexB_c) {
 				array[count].light.time = partB_color_time[j];
 				array[count].light.red = (partB_color[j] & 0xff) * partB_brightness[indexB_t - 1] / 255;
 				array[count].light.green = ((partB_color[j] >> 8) & 0xff) * partB_brightness[indexB_t - 1] / 255;
@@ -626,11 +637,11 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				count++;
 			}
 
-			while (i < indexC_c) {
+			while (j < indexC_c) {
 				array[count].light.time = partC_color_time[j];
 				array[count].light.red = ((partC_color[j] & 0xff)) * partC_brightness[indexC_t - 1] / 255;
-				array[count].light.green = ((partC_color[j] >> 8) & 0xff) * partD_brightness[indexC_t - 1] / 255;
-				array[count].light.blue = ((partC_color[j] >> 16) & 0xff) * partD_brightness[indexC_t - 1] / 255;
+				array[count].light.green = ((partC_color[j] >> 8) & 0xff) * partC_brightness[indexC_t - 1] / 255;
+				array[count].light.blue = ((partC_color[j] >> 16) & 0xff) * partC_brightness[indexC_t - 1] / 255;
 				j++;
 				count++;
 			}
@@ -674,7 +685,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				count++;
 			}
 
-			while (i < indexD_c) {
+			while (j < indexD_c) {
 				array[count].light.time = partD_color_time[j];
 				array[count].light.red = (partD_color[j] & 0xff) * partD_brightness[indexD_t - 1] / 255;
 				array[count].light.green = ((partD_color[j] >> 8) & 0xff) * partD_brightness[indexD_t - 1] / 255;
@@ -705,16 +716,20 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 						array[count].strip.green = 0;
 						array[count].strip.blue = 0;
 						array[count].strip.SPX_type = 0;
+						array[count].strip.SPX_duration = 0;
 						i++;
 						count++;
 					} else if (partE_brightness[i - 1] == 0) {	// turn on
 						printf("line 711: turn on command should be "
 							   "accompanied with lyrics\n");
+						i++;
 					} else {
 						printf("line 714: global brightness shouldn't effect strip\n");
+						i++;
 					}
 				} else {	// store color info first maybe this shouldn't happen...
 					printf("line 717: color info and turn on should be paired...\n");
+					j++;
 				}
 			}
 
@@ -741,16 +756,20 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 						array[count].strip.green = 0;
 						array[count].strip.blue = 0;
 						array[count].strip.SPX_type = 0;
+						array[count].strip.SPX_duration = 0;
 						i++;
 						count++;
 					} else if (partF_brightness[i - 1] == 0) {	// turn on
 						printf("line 747: turn on command should be "
 							   "accompanied with lyrics\n");
+						i++;
 					} else {
 						printf("line 750: global brightness shouldn't effect strip\n");
+						i++;
 					}
 				} else {	// store color info first maybe this shouldn't happen...
 					printf("line 753: color info and turn on should be paired...\n");
+					j++;
 				}
 			}
 
@@ -761,6 +780,8 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 		default:
 			printf("line 762: some unused part was called...\n");
 	}
+
+	return count - 1;
 }
 
 void write2file(FILE **output, char name, ws2812 *array) {

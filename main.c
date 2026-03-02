@@ -22,7 +22,6 @@ int main(int argc, char **argv)
 
     FILE *input, *output;
 	double time_in_us = 0;
-	int flag = 0;
 	uint64_t data = 0;
 	uint8_t event = 127;
 	double us_per_tick = 1;
@@ -45,6 +44,20 @@ int main(int argc, char **argv)
     strncpy(input_filename, argv[1], FILENAME_SIZE);
 	input = fopen(input_filename, "r"); /*open the file*/
 	output = fopen("out.h", "w"); /*open the file*/
+
+    if (input == NULL) {
+        printf("failed to open input file: %s\n", input_filename);
+        if (output != NULL) {
+            fclose(output);
+        }
+        return 1;
+    }
+
+    if (output == NULL) {
+        printf("failed to open output file: out.h\n");
+        fclose(input);
+        return 1;
+    }
 
     if (!(ticks_per_qnote = readHeader(&input))) {
         printf("no ticks per qnote\n");
