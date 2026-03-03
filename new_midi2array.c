@@ -148,14 +148,12 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 	uint8_t is_running = 0;	// 1 if the event is same as previous onein
     int i;  // loop index
 
-	// static int k = 0;
-	// printf("execution: %d\n", k++);
-
 	fread(&event_buffer, 1, 1, *midi_input);
 
 	// channel info is ignored and get the event
 	switch ((event_buffer >> 4)) {
 	case 0x8:   // turn off light
+		printf("get into??\n");
 		*event = 0;
 		break;
 
@@ -202,7 +200,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
         break;
 
 	default: // running status (MSB is 0, event is same as previous one)
-		if (*event == 30) { // check brightness
+		if (*event / 10 == 3) { // check brightness
 			if (event_buffer != 0x02) { // unsupported
 				*event = 39;
 			} else {
@@ -220,18 +218,15 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 		// the second data byte does not matter
 		fread(&dump, 1, 1, *midi_input);
-		// printf("infinite?\n"); no
 		break;
 
 	case 1: // turn on light
 		fread(&data_buffer[0], 1 - is_running, 1, *midi_input);
 		fread(&data_buffer[1], 1, 1, *midi_input);
-		// printf("infinite?\n"); no
 		break;
 
 	case 30: // brightness
 		fread(&data_buffer[1], 1 - is_running, 1, *midi_input);
-		// printf("infinite?\n"); no
 		break;
 
 	case 70: // fallthrough
@@ -239,13 +234,12 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		for (i = 0; i < data_length; i++) {
 			fread(&data_buffer[i], 1, 1, *midi_input);
 		}
-		// printf("infinie??\n"); no
 		break;
 
 	case 73: // lyrics, only used to change color
-		// printf("infinite?\n"); no
-		if (data_length != 0x08 || data_length != 0xA) {  // unsupported
-			for ( ;data_length > 0; data_length--) {
+		if (data_length != 8 && data_length != 10) {  // unsupported
+			// printf("data_length: %u\n", data_length);
+			for ( ; data_length > 0; data_length--) {
 				fread(&dump, 1, 1, *midi_input);
 			}
 			*event = 125;
@@ -264,10 +258,8 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 				
 				default:
 					data_buffer[0] = 0;
-					// printf("wtf: %c\n", data_buffer[0]);
-					// this one won't be executed...
 			}
-			printf("select part: %u\n", data_buffer[0]); // only read to 67??
+
 			if (!data_buffer[0]) { // if no part selected, dump the rest
 				for ( ;data_length > 1; data_length--) {
 					fread(&dump, 1, 1, *midi_input);
@@ -283,10 +275,8 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 			    fread(&tmp[1], 1, 1, *midi_input);
 			    data_buffer[i] = ascii_hex2value(tmp[0],tmp[1]);
             }
-
             
-            if (data_buffer[0] == partE || data_buffer[0] == partF) {
-				// printf("infinite??\n"); no
+            if (data_buffer[0] == 'E' || data_buffer[0] == 'F') {
                 fread(&tmp[0], 1, 1, *midi_input);
 			    fread(&tmp[1], 1, 1, *midi_input);
 			    data_buffer[4] = ascii_hex2value(tmp[0],tmp[1]);
@@ -295,23 +285,19 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		break;
 
 	case 72: // fallthrough
-		// printf("or this one??\n"); not this one
 	case 125:
 		for ( ;data_length > 0; data_length--) {
 			fread(&dump, 1, 1, *midi_input);
 		}
-		// printf("infinte??\n");		// ! encounter infinity
 		break;
 
 	case 39: // fallthrough
 	case 126: // unsupported, discard 1 byte
 		fread(&dump, 1 - is_running, 1, *midi_input);
-		// printf("infinte??\n"); no
 		break;
 
 	case 127: // unsupported, discard 2 bytes
 		fread(&dump, 2 - is_running, 1, *midi_input);
-		// printf("infinte??\n"); no
 		break;
 
 	default:
@@ -324,7 +310,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
         turn on light  : data_buffer[0] is part, data_buffer[1] is brightness
 							of a single ws2812 (midi seems to set "NOTE OFF"
 							by using "NOTE ON" and brightness is 0)
-        turn off light : data_buffer[0] is part (maybe won't use)
+        turn off light : data_buffer[0] is part
         set color light: data_buffer[0] is part, data_buffer[1 ~ 3] are rgb
         set color strip: data_buffre[0] is part, data_buffer[1 ~ 3] are rgb and
 							data_buffer[4] is SPX type
@@ -384,7 +370,7 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 				break;
 
 			default:
-				printf("line 346: something went wrong...\n");
+				printf("line 373...\n");
 		}
 		break;
 	
@@ -427,8 +413,8 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 				break;
 
 			default:
-				printf("%lu\n", data & 0xff);
-				printf("line 416: turn something else on...\n");
+				printf("%lu ", data & 0xff);
+				printf("line 433: turn something else on...\n");
 		}
 		break;
 	
