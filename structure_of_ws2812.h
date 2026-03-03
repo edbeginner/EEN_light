@@ -8,11 +8,11 @@
 typedef struct {
 	union {
 		struct {
-			int32_t time;
+			uint32_t time;
 			uint8_t red, green, blue;
 		} light;
 		struct {
-			int32_t time;
+			uint32_t time;
 			uint8_t red, green, blue;
 			uint8_t SPX_type;
 			uint16_t SPX_duration; // use ms ?
