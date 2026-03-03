@@ -249,11 +249,27 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 			switch (data_buffer[0]) {
 				case 'A':
+					data_buffer[0] = partA;
+					break;
+
 				case 'B':
+					data_buffer[0] = partB;
+					break;
+
 				case 'C':
+					data_buffer[0] = partC;
+					break;
+
 				case 'D':
+					data_buffer[0] = partD;
+					break;
+
 				case 'E':
+					data_buffer[0] = partE;
+					break;
+
 				case 'F':
+					data_buffer[0] = partF;
 					break;
 				
 				default:
@@ -276,7 +292,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 			    data_buffer[i] = ascii_hex2value(tmp[0],tmp[1]);
             }
             
-            if (data_buffer[0] == 'E' || data_buffer[0] == 'F') {
+            if (data_buffer[0] == partE || data_buffer[0] == partF) {
                 fread(&tmp[0], 1, 1, *midi_input);
 			    fread(&tmp[1], 1, 1, *midi_input);
 			    data_buffer[4] = ascii_hex2value(tmp[0],tmp[1]);
@@ -750,7 +766,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 						i++;
 						count++;
 					} else if (partE_brightness[i - 1] == 0) {	// turn on
-						printf("line 711: turn on command should be "
+						printf("line 769: turn on command should be "
 							   "accompanied with lyrics\n");
 						i++;
 					} else {
@@ -790,11 +806,11 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 						i++;
 						count++;
 					} else if (partF_brightness[i - 1] == 0) {	// turn on
-						printf("line 747: turn on command should be "
+						printf("line 809: turn on command should be "
 							   "accompanied with lyrics\n");
 						i++;
 					} else {
-						printf("line 750: global brightness shouldn't effect strip\n");
+						printf("line 813: global brightness shouldn't effect strip\n");
 						i++;
 					}
 				} else {	// store color info first maybe this shouldn't happen...
