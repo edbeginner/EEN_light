@@ -29,28 +29,28 @@ static uint16_t indexA_c = 1;							// index of color arrays (color and color_ti
 static uint16_t indexA_t = 1;							// index of time array
 
 static uint32_t partB_time[ARRAY_SIZE] = {0};
-static uint8_t partB_color_time[ARRAY_SIZE] = {0};
+static uint32_t partB_color_time[ARRAY_SIZE] = {0};
 static uint32_t partB_color[ARRAY_SIZE];				// there might be some default colors
 static uint8_t partB_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexB_c = 1;
 static uint16_t indexB_t = 1;							// index time also indicates the len of array in the end
 
 static uint32_t partC_time[ARRAY_SIZE] = {0};
-static uint8_t partC_color_time[ARRAY_SIZE] = {0};
+static uint32_t partC_color_time[ARRAY_SIZE] = {0};
 static uint32_t partC_color[ARRAY_SIZE];
 static uint8_t partC_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexC_c = 1;
 static uint16_t indexC_t = 1;
 
 static uint32_t partD_time[ARRAY_SIZE] = {0};
-static uint8_t partD_color_time[ARRAY_SIZE] = {0};
+static uint32_t partD_color_time[ARRAY_SIZE] = {0};
 static uint32_t partD_color[ARRAY_SIZE];
 static uint8_t partD_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexD_c = 1;
 static uint16_t indexD_t = 1;
 
 static uint32_t partE_time[ARRAY_SIZE] = {0};
-static uint8_t partE_color_time[ARRAY_SIZE] = {0};
+static uint32_t partE_color_time[ARRAY_SIZE] = {0};
 static uint32_t partE_color[ARRAY_SIZE];
 static uint8_t partE_brightness[ARRAY_SIZE] = {0};
 static uint8_t partE_SPX[ARRAY_SIZE] = {0};
@@ -58,7 +58,7 @@ static uint16_t indexE_c = 1;
 static uint16_t indexE_t = 1;
 
 static uint32_t partF_time[ARRAY_SIZE] = {0};
-static uint8_t partF_color_time[ARRAY_SIZE] = {0};
+static uint32_t partF_color_time[ARRAY_SIZE] = {0};
 static uint32_t partF_color[ARRAY_SIZE];
 static uint8_t partF_brightness[ARRAY_SIZE] = {0};
 static uint8_t partF_SPX[ARRAY_SIZE] = {0};
@@ -68,6 +68,7 @@ static uint16_t indexF_t = 1;
 
 // * finction definations
 
+// I think this one is fine
 uint32_t readHeader(FILE **midi_input) {
 	uint32_t buffer;
 	uint32_t ticks_per_qnote;
@@ -108,7 +109,8 @@ uint32_t readHeader(FILE **midi_input) {
 	return ticks_per_qnote;
 }
 
-double read_dt(FILE **midi_input, double us_per_tick) {
+// this one is also fine
+float read_dt(FILE **midi_input, float us_per_tick) {
 	uint32_t dt = 0;
 	uint8_t time_buffer = 0;
 
@@ -119,6 +121,8 @@ double read_dt(FILE **midi_input, double us_per_tick) {
 		fread(&time_buffer, 1, 1, *midi_input);
 	}
 	dt = (dt | time_buffer);
+	
+	// printf("%u\n", dt); here is an infinite loop
 
 	return (dt * us_per_tick);
 }
@@ -143,6 +147,9 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 	uint8_t tmp[2] = {0};	// store temp value for some computation
 	uint8_t is_running = 0;	// 1 if the event is same as previous onein
     int i;  // loop index
+
+	// static int k = 0;
+	// printf("execution: %d\n", k++);
 
 	fread(&event_buffer, 1, 1, *midi_input);
 
@@ -213,26 +220,31 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 		// the second data byte does not matter
 		fread(&dump, 1, 1, *midi_input);
+		// printf("infinite?\n"); no
 		break;
 
 	case 1: // turn on light
 		fread(&data_buffer[0], 1 - is_running, 1, *midi_input);
 		fread(&data_buffer[1], 1, 1, *midi_input);
+		// printf("infinite?\n"); no
 		break;
 
 	case 30: // brightness
 		fread(&data_buffer[1], 1 - is_running, 1, *midi_input);
+		// printf("infinite?\n"); no
 		break;
 
 	case 70: // fallthrough
 	case 71: // data for these two events are at most 4 bytes
-		for ( ;data_length > 0; data_length--) {
-			fread(&data_buffer[4 - data_length], 1, 1, *midi_input);
+		for (i = 0; i < data_length; i++) {
+			fread(&data_buffer[i], 1, 1, *midi_input);
 		}
+		// printf("infinie??\n"); no
 		break;
 
 	case 73: // lyrics, only used to change color
-		if (data_length != 0x08) {  // unsupported
+		// printf("infinite?\n"); no
+		if (data_length != 0x08 || data_length != 0xA) {  // unsupported
 			for ( ;data_length > 0; data_length--) {
 				fread(&dump, 1, 1, *midi_input);
 			}
@@ -241,24 +253,21 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		} else {
 			fread(&data_buffer[0], 1, 1, *midi_input);
 
-			// ! need to think clear...
 			switch (data_buffer[0]) {
-				case partA, partB, partC, partD:
-
-					break;
-
-				case partE:
-
-					break;
-
-				case partF:
-
+				case 'A':
+				case 'B':
+				case 'C':
+				case 'D':
+				case 'E':
+				case 'F':
 					break;
 				
 				default:
-					printf("line 270: lyric sets something weird...\n");
-                // use to decide the part
+					data_buffer[0] = 0;
+					// printf("wtf: %c\n", data_buffer[0]);
+					// this one won't be executed...
 			}
+			printf("select part: %u\n", data_buffer[0]); // only read to 67??
 			if (!data_buffer[0]) { // if no part selected, dump the rest
 				for ( ;data_length > 1; data_length--) {
 					fread(&dump, 1, 1, *midi_input);
@@ -277,32 +286,36 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
             
             if (data_buffer[0] == partE || data_buffer[0] == partF) {
+				// printf("infinite??\n"); no
                 fread(&tmp[0], 1, 1, *midi_input);
 			    fread(&tmp[1], 1, 1, *midi_input);
 			    data_buffer[4] = ascii_hex2value(tmp[0],tmp[1]);
             }
-           
 		}
 		break;
 
 	case 72: // fallthrough
+		// printf("or this one??\n"); not this one
 	case 125:
 		for ( ;data_length > 0; data_length--) {
 			fread(&dump, 1, 1, *midi_input);
 		}
+		// printf("infinte??\n");		// ! encounter infinity
 		break;
 
 	case 39: // fallthrough
 	case 126: // unsupported, discard 1 byte
 		fread(&dump, 1 - is_running, 1, *midi_input);
+		// printf("infinte??\n"); no
 		break;
 
 	case 127: // unsupported, discard 2 bytes
 		fread(&dump, 2 - is_running, 1, *midi_input);
+		// printf("infinte??\n"); no
 		break;
 
 	default:
-		printf("????\n");
+		printf("weird meta event\n");
 		break;
 	}
 
@@ -324,11 +337,13 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
     *data = ((uint64_t)data_buffer[4] << 32) | (data_buffer[3] << 24)
             | (data_buffer[2] << 16) | (data_buffer[1] << 8) | (data_buffer[0]);
 
+	// printf("data_buffer[0]: %u\n", data_buffer[0]); wtf is data_buffer[0] = 170
+
 	return 0;
 }
 
-void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
-			  double *us_per_tick, const int ticks_per_qnote) {
+void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
+			  float *us_per_tick, const int ticks_per_qnote) {
 	switch (event) {
 	case 0:		// note off (turn off light)
 		switch (data & 0xff) {
@@ -412,7 +427,8 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 				break;
 
 			default:
-				printf("line 389: turn something else on...\n");
+				printf("%lu\n", data & 0xff);
+				printf("line 416: turn something else on...\n");
 		}
 		break;
 	
@@ -450,7 +466,7 @@ void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
 		break;
 
 	case 70:	// temple (time controll)	
-		*us_per_tick = (double)data / ticks_per_qnote;
+		*us_per_tick = (float)(data & 0xffffffff) / ticks_per_qnote;
 		break;
 
 	case 71:	// time signal (we don't use this)
@@ -518,6 +534,18 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 	int i = 1, j = 1, count = 1;	// loop indices
 
+	// static int one = 1;
+	// if (one) {
+	// 	printf("A:\n");
+	// 	for (int i = 0; i < indexA_t; i++) {
+	// 		printf("%d %d\n", partA_time[i], partA_brightness[i]);
+	// 	}
+	// 	for (int i = 0; i < indexA_c; i++) {
+	// 		printf("%d %d\n", partA_color_time[i], partA_color[i]);
+	// 	}
+	// 	one = 0;
+	// }
+
 	// merge time info
     switch (name) {
 		case partA:
@@ -564,7 +592,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				j++;
 				count++;
 			}
-			indexA_t = count - 1;
+			indexA_t = count;
 
 			break;
 
@@ -612,7 +640,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				j++;
 				count++;
 			}
-			indexB_t = count - 1;
+			indexB_t = count;
 
 			break;
 
@@ -660,7 +688,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				j++;
 				count++;
 			}
-			indexC_t = count - 1;
+			indexC_t = count;
 			
 			break;
 
@@ -708,10 +736,11 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				j++;
 				count++;
 			}
-			indexD_t = count - 1;
+			indexD_t = count;
 
 			break;
 
+		// ! think care about this one...
 		case partE:
 			while (i < indexE_t && j < indexE_c) {
 				if (partE_time[i] == partE_color_time[j]) {
@@ -748,7 +777,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				}
 			}
 
-			indexE_t = count - 1;
+			indexE_t = count;
 
 			break;
 		
@@ -788,7 +817,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				}
 			}
 
-			indexF_t = count - 1;
+			indexF_t = count;
 
 			break;
 
@@ -803,7 +832,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 	int i;	// loop index
 
 	switch (name) {
-		case partA:
+		case 'A':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexA_t);
 			for (i = 0; i < indexA_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -815,10 +844,10 @@ void write2file(FILE **output, char name, ws2812 *array) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
-		case partB:
+		case 'B':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexB_t);
 			for (i = 0; i < indexB_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -830,10 +859,10 @@ void write2file(FILE **output, char name, ws2812 *array) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
-		case partC:
+		case 'C':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexC_t);
 			for (i = 0; i < indexC_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -845,10 +874,10 @@ void write2file(FILE **output, char name, ws2812 *array) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
-		case partD:
+		case 'D':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexD_t);
 			for (i = 0; i < indexD_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -860,10 +889,10 @@ void write2file(FILE **output, char name, ws2812 *array) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
-		case partE:
+		case 'E':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexE_t);
 			for (i = 0; i < indexE_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -876,10 +905,10 @@ void write2file(FILE **output, char name, ws2812 *array) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.strip = {-1, 0, 0, 0, 0}}};\n\n");
 			break;
 
-		case partF:
+		case 'F':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexF_t);
 			for (i = 0; i < indexF_t - 1; i++) {
 				if (i % 4 == 0) {
@@ -892,7 +921,7 @@ void write2file(FILE **output, char name, ws2812 *array) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\n\t{.light = {-1, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.strip = {-1, 0, 0, 0, 0}}};\n\n");
 			break;
 	}
 }

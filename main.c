@@ -21,10 +21,10 @@ int main(int argc, char **argv)
     */
 
     FILE *input, *output;
-	double time_in_us = 0;
+	float time_in_us = 0;
 	uint64_t data = 0;
 	uint8_t event = 127;
-	double us_per_tick = 1;
+	float us_per_tick = 1;
 	int ticks_per_qnote = 1;
 	char input_filename[FILENAME_SIZE];
 
@@ -66,7 +66,7 @@ int main(int argc, char **argv)
 
     us_per_tick = 500000.0f / ticks_per_qnote;
 
-    while (1) {
+    while (1) { // there is an infinite loop inside this one
         time_in_us += read_dt(&input, us_per_tick);
         if (readEvent(&input, &data, &event)) break;
         saveData(data, event, time_in_us, &us_per_tick, ticks_per_qnote);
@@ -80,12 +80,12 @@ int main(int argc, char **argv)
 
     fprintf(output, "#include \"structure_of_ws2812.h\"\n\n");
 
-    write2file(&output, partA, part_A);
-    write2file(&output, partB, part_B);
-    write2file(&output, partC, part_C);
-    write2file(&output, partD, part_D);
-    write2file(&output, partE, part_E);
-    write2file(&output, partF, part_F);
+    write2file(&output, 'A', part_A);
+    write2file(&output, 'B', part_B);
+    write2file(&output, 'C', part_C);
+    write2file(&output, 'D', part_D);
+    write2file(&output, 'E', part_E);
+    write2file(&output, 'F', part_F);
 
     fclose(input);
     fclose(output);

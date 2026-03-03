@@ -21,7 +21,7 @@
 uint32_t readHeader(FILE **midi_input);
 
 // assume next data would be delta time, return dt in us
-double read_dt(FILE **midi_input, double us_per_tick);
+float read_dt(FILE **midi_input, float us_per_tick);
 
 /*
 	read midi events, return 1 if End of Track is read, otherwise return 0.
@@ -30,8 +30,8 @@ double read_dt(FILE **midi_input, double us_per_tick);
 uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event);
 
 // store data to corresponding array
-void saveData(const uint64_t data, const uint8_t event, const double time_in_us,
-			  double *us_per_tick, const int ticks_per_qnote);
+void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
+			  float *us_per_tick, const int ticks_per_qnote);
 
 // change data to struct and return the len of array
 int data2struct(const char name, ws2812 array[ARRAY_SIZE]);
