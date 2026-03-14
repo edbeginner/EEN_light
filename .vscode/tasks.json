@@ -2,6 +2,24 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
+<<<<<<< HEAD
+=======
+			"type": "shell",
+			"label": "Build all C files (debug)",
+			"command": "/usr/bin/gcc -fdiagnostics-color=always -g -O0 ${workspaceFolder}/*.c -o ${workspaceFolder}/midi2struct_dbg",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+>>>>>>> origin/master
 			"type": "cppbuild",
 			"label": "C/C++: gcc build active file",
 			"command": "/usr/bin/gcc",
