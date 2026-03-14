@@ -53,7 +53,6 @@ static uint32_t partE_time[ARRAY_SIZE] = {0};
 static uint32_t partE_color_time[ARRAY_SIZE] = {0};
 static uint32_t partE_color[ARRAY_SIZE];
 static uint8_t partE_brightness[ARRAY_SIZE] = {0};
-static uint8_t partE_SPX[ARRAY_SIZE] = {0};
 static uint16_t indexE_c = 1;
 static uint16_t indexE_t = 1;
 
@@ -248,23 +247,24 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 			fread(&data_buffer[0], 1, 1, *midi_input);
 
 			switch (data_buffer[0]) {
-				case 'A':
+				// out agreement
+				case 'H':
 					data_buffer[0] = partA;
 					break;
 
-				case 'B':
+				case 'G':
 					data_buffer[0] = partB;
 					break;
 
-				case 'C':
+				case 'U':
 					data_buffer[0] = partC;
 					break;
 
-				case 'D':
+				case 'L':
 					data_buffer[0] = partD;
 					break;
 
-				case 'E':
+				case 'S':
 					data_buffer[0] = partE;
 					break;
 
@@ -292,7 +292,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 			    data_buffer[i] = ascii_hex2value(tmp[0],tmp[1]);
             }
             
-            if (data_buffer[0] == partE || data_buffer[0] == partF) {
+            if (data_buffer[0] == partF) {
                 fread(&tmp[0], 1, 1, *midi_input);
 			    fread(&tmp[1], 1, 1, *midi_input);
 			    data_buffer[4] = ascii_hex2value(tmp[0],tmp[1]);
@@ -463,7 +463,14 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 				indexD_t++;
 		}
 
-		// don't adjust the brightness of strips due to SPX
+		if (partE_time[indexE_t - 1] != (uint32_t)time_in_us
+			&& partE_brightness[indexE_t - 1] != 0) {
+				partE_time[indexE_t] = (uint32_t)time_in_us;
+				partE_brightness[indexE_t] = (data >> 8) & 0xff;
+				indexE_t++;
+		}
+
+		// don't adjust the brightness of the strip due to SPX
 
 		break;
 
@@ -505,7 +512,6 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 			case partE:
 				partE_color_time[indexE_c] = (uint32_t)time_in_us;
 				partE_color[indexE_c] = ((data >> 8) & 0xffffff);
-				partE_SPX[indexE_c] = (data >> 32);
 				indexE_c++;
 				break;
 
@@ -742,47 +748,55 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 			break;
 
-		// ! think care about this one...
 		case partE:
 			while (i < indexE_t && j < indexE_c) {
 				if (partE_time[i] == partE_color_time[j]) {
-					array[count].strip.time = partE_time[i];
-					array[count].strip.red = (partE_color[j] & 0xff) * partE_brightness[i] / 255;
-					array[count].strip.green = ((partE_color[j] >> 8) & 0xff) * partE_brightness[i] / 255;
-					array[count].strip.blue = ((partE_color[j] >> 16) & 0xff) * partE_brightness[i] / 255;
-					array[count].strip.SPX_type = partE_SPX[j];
-					array[count].strip.SPX_duration = partE_color_time[j + 1] - partE_color_time[j];
+					array[count].light.time = partE_time[i];
+					array[count].light.red = (partE_color[j] & 0xff) * partE_brightness[i] / 255;
+					array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partE_brightness[i] / 255;
+					array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partE_brightness[i] / 255;
 					i++;
 					j++;
 					count++;
-				} else if (partE_time[i] < partE_color_time[j]) {	// store brightness info (just turn on or off)
-					if (partE_brightness[i] == 0) {		// turn off
-						array[count].strip.time = partE_time[i];
-						array[count].strip.red = 0;
-						array[count].strip.green = 0;
-						array[count].strip.blue = 0;
-						array[count].strip.SPX_type = 0;
-						array[count].strip.SPX_duration = 0;
-						i++;
-						count++;
-					} else if (partE_brightness[i - 1] == 0) {	// turn on
-						printf("line 769: turn on command should be "
-							   "accompanied with lyrics\n");
-						i++;
-					} else {
-						printf("line 714: global brightness shouldn't effect strip\n");
-						i++;
-					}
-				} else {	// store color info first maybe this shouldn't happen...
-					printf("line 717: color info and turn on should be paired...\n");
+				} else if (partE_time[i] < partE_color_time[j]) {
+					array[count].light.time = partE_time[i];
+					array[count].light.red = array[count - 1].light.red * partE_brightness[i] / 255;
+					array[count].light.green = array[count - 1].light.green * partE_brightness[i] / 255;
+					array[count].light.blue = array[count - 1].light.blue * partE_brightness[i] / 255;
+					i++;
+					count++;
+				} else {
+					array[count].light.time = partE_color_time[j];
+					array[count].light.red = (partE_color[j] & 0xff) * partE_brightness[i - 1] / 255;
+					array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partE_brightness[i - 1] / 255;
+					array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partE_brightness[i - 1] / 255;
 					j++;
+					count++;
 				}
 			}
 
+			while (i < indexE_t) {
+				array[count].light.time = partE_time[i];
+				array[count].light.red = array[count - 1].light.red * partE_brightness[i] / 255;
+				array[count].light.green = array[count - 1].light.green * partE_brightness[i] / 255;
+				array[count].light.blue = array[count - 1].light.blue * partE_brightness[i] / 255;
+				i++;
+				count++;
+			}
+
+			while (j < indexE_c) {
+				array[count].light.time = partE_color_time[j];
+				array[count].light.red = (partE_color[j] & 0xff) * partD_brightness[indexE_t - 1] / 255;
+				array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partD_brightness[indexE_t - 1] / 255;
+				array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partD_brightness[indexE_t - 1] / 255;
+				j++;
+				count++;
+			}
 			indexE_t = count;
 
 			break;
 		
+		// ! think care about this one...
 		case partF:
 			while (i < indexF_t && j < indexF_c) {
 				if (partF_time[i] == partF_color_time[j]) {
@@ -900,14 +914,13 @@ void write2file(FILE **output, char name, ws2812 *array) {
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
-				fprintf(*output, "{.strip = {%d, %u, %u, %u, %u, %u}}, ", array[i].strip.time, array[i].strip.red,
-																		array[i].strip.green, array[i].strip.blue,
-																		array[i].strip.SPX_type, array[i].strip.SPX_duration);
+				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
+																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\t{.strip = {-1, 0, 0, 0, 0}}};\n\n");
+			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
 			break;
 
 		case 'F':
