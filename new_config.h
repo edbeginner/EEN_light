@@ -1,6 +1,6 @@
-#define partA 81u
-#define partB 77u
-#define partC 74u
-#define partD 71u
-#define partE 67u
-#define partF 64u
+#define partA 64u
+#define partB 67u
+#define partC 71u   
+#define partD 74u   
+#define partE 77u
+#define partF 81u

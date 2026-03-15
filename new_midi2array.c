@@ -98,7 +98,6 @@ uint32_t readHeader(FILE **midi_input) {
 
 	fread(&buffer, 2, 1, *midi_input);	// time info
 	ticks_per_qnote = (((buffer & 0x0000ff00) >> 8) | ((buffer & 0x000000ff) << 8));
-
 	fread(&buffer, 4, 1, *midi_input); // MTrk
 	if (buffer != 0x6b72544d) {
 		printf("track not found\n");
@@ -152,7 +151,6 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 	// channel info is ignored and get the event
 	switch ((event_buffer >> 4)) {
 	case 0x8:   // turn off light
-		printf("get into??\n");
 		*event = 0;
 		break;
 
@@ -217,7 +215,8 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 		// the second data byte does not matter
 		fread(&dump, 1, 1, *midi_input);
-		break;
+		*data = partF;
+		return 0;
 
 	case 1: // turn on light
 		fread(&data_buffer[0], 1 - is_running, 1, *midi_input);
@@ -237,7 +236,6 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 	case 73: // lyrics, only used to change color
 		if (data_length != 8 && data_length != 10) {  // unsupported
-			// printf("data_length: %u\n", data_length);
 			for ( ; data_length > 0; data_length--) {
 				fread(&dump, 1, 1, *midi_input);
 			}
@@ -339,8 +337,6 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
     *data = ((uint64_t)data_buffer[4] << 32) | (data_buffer[3] << 24)
             | (data_buffer[2] << 16) | (data_buffer[1] << 8) | (data_buffer[0]);
 
-	// printf("data_buffer[0]: %u\n", data_buffer[0]); wtf is data_buffer[0] = 170
-
 	return 0;
 }
 
@@ -350,30 +346,35 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 	case 0:		// note off (turn off light)
 		switch (data & 0xff) {
 			case partA:
+				printf("partA shouldn't be turned off\n");
 				partA_time[indexA_t] = (uint32_t)time_in_us;
 				partA_brightness[indexA_t] = 0;
 				indexA_t++;
 				break;
 
 			case partB:
+				printf("partB shouldn't be turned off\n");
 				partB_time[indexB_t] = (uint32_t)time_in_us;
 				partB_brightness[indexB_t] = 0;
 				indexB_t++;
 				break;
 
 			case partC:
+				printf("partC shouldn't be turned off\n");
 				partC_time[indexC_t] = (uint32_t)time_in_us;
 				partC_brightness[indexC_t] = 0;
 				indexC_t++;
 				break;
 
 			case partD:
+				printf("partD shouldn't be turned off\n");
 				partD_time[indexD_t] = (uint32_t)time_in_us;
 				partD_brightness[indexD_t] = 0;
 				indexD_t++;
 				break;
 
 			case partE:
+				printf("partE shouldn't be turned off\n");
 				partE_time[indexE_t] = (uint32_t)time_in_us;
 				partE_brightness[indexE_t] = 0;
 				indexE_t++;
@@ -471,7 +472,6 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 		}
 
 		// don't adjust the brightness of the strip due to SPX
-
 		break;
 
 	case 70:	// temple (time controll)	
@@ -537,67 +537,19 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 }
 
 int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
-	// we don't use index 0 (init to 0)
-	memset(&array[0], 0, sizeof(ws2812));
-
-	int i = 1, j = 1, count = 1;	// loop indices
-
-	// static int one = 1;
-	// if (one) {
-	// 	printf("A:\n");
-	// 	for (int i = 0; i < indexA_t; i++) {
-	// 		printf("%d %d\n", partA_time[i], partA_brightness[i]);
-	// 	}
-	// 	for (int i = 0; i < indexA_c; i++) {
-	// 		printf("%d %d\n", partA_color_time[i], partA_color[i]);
-	// 	}
-	// 	one = 0;
-	// }
+	int i = 0, j = 0, count = 0;	// loop indices
 
 	// merge time info
     switch (name) {
 		case partA:
-			while (i < indexA_t && j < indexA_c) {
-				if (partA_time[i] == partA_color_time[j]) {
-					array[count].light.time = partA_time[i];
-					array[count].light.red = (partA_color[j] & 0xff) * partA_brightness[i] / 255;
-					array[count].light.green = ((partA_color[j] >> 8) & 0xff) * partA_brightness[i] / 255;
-					array[count].light.blue = ((partA_color[j] >> 16) & 0xff) * partA_brightness[i] / 255;
-					i++;
+			for (i = 0, j = 0; i < indexA_t; i++) {
+				while ((j < indexA_c - 1) && (partA_time[i] >= partA_color_time[j + 1])) {
 					j++;
-					count++;
-				} else if (partA_time[i] < partA_color_time[j]) {	// store brightness info (continue RGB info)
-					array[count].light.time = partA_time[i];
-					array[count].light.red = array[count - 1].light.red * partA_brightness[i] / 255;
-					array[count].light.green = array[count - 1].light.green * partA_brightness[i] / 255;
-					array[count].light.blue = array[count - 1].light.blue * partA_brightness[i] / 255;
-					i++;
-					count++;
-				} else {	// store color info (continue brightness info)
-					array[count].light.time = partA_color_time[j];
-					array[count].light.red = (partA_color[j] & 0xff) * partA_brightness[i - 1] / 255;
-					array[count].light.green = ((partA_color[j] >> 8) & 0xff) * partA_brightness[i - 1] / 255;
-					array[count].light.blue = ((partA_color[j] >> 16) & 0xff) * partA_brightness[i - 1] / 255;
-					j++;
-					count++;
 				}
-			}
-
-			while (i < indexA_t) {
 				array[count].light.time = partA_time[i];
-				array[count].light.red = array[count - 1].light.red * partA_brightness[i] / 255;
-				array[count].light.green = array[count - 1].light.green * partA_brightness[i] / 255;
-				array[count].light.blue = array[count - 1].light.blue * partA_brightness[i] / 255;
-				i++;
-				count++;
-			}
-
-			while (j < indexA_c) {
-				array[count].light.time = partA_color_time[j];
-				array[count].light.red = (partA_color[j] & 0xff) * partA_brightness[indexA_t - 1] / 255;
-				array[count].light.green = ((partA_color[j] >> 8) & 0xff) * partA_brightness[indexA_t - 1] / 255;
-				array[count].light.blue = ((partA_color[j] >> 16) & 0xff) * partA_brightness[indexA_t - 1] / 255;
-				j++;
+				array[count].light.red = (partA_color[j] & 0xff) * partA_brightness[i] / 255;
+				array[count].light.green = ((partA_color[j] >> 8) & 0xff) * partA_brightness[i] / 255;
+				array[count].light.blue = ((partA_color[j] >> 16) & 0xff) * partA_brightness[i] / 255;
 				count++;
 			}
 			indexA_t = count;
@@ -605,47 +557,14 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 			break;
 
 		case partB:
-			while (i < indexB_t && j < indexB_c) {
-				if (partB_time[i] == partB_color_time[j]) {
-					array[count].light.time = partB_time[i];
-					array[count].light.red = (partB_color[j] & 0xff) * partB_brightness[i] / 255;
-					array[count].light.green = ((partB_color[j] >> 8) & 0xff) * partB_brightness[i] / 255;
-					array[count].light.blue = ((partB_color[j] >> 16) & 0xff) * partB_brightness[i] / 255;
-					i++;
+			for (i = 0, j = 0; i < indexB_t; i++) {
+				while ((j < indexB_c - 1) && (partB_time[i] >= partB_color_time[j + 1])) {
 					j++;
-					count++;
-				} else if (partB_time[i] < partB_color_time[j]) {
-					array[count].light.time = partB_time[i];
-					array[count].light.red = array[count - 1].light.red * partB_brightness[i] / 255;
-					array[count].light.green = array[count - 1].light.green * partB_brightness[i] / 255;
-					array[count].light.blue = array[count - 1].light.blue * partB_brightness[i] / 255;
-					i++;
-					count++;
-				} else {
-					array[count].light.time = partB_color_time[j];
-					array[count].light.red = (partB_color[j] & 0xff) * partB_brightness[i - 1] / 255;
-					array[count].light.green = ((partB_color[j] >> 8) & 0xff) * partB_brightness[i - 1] / 255;
-					array[count].light.blue = ((partB_color[j] >> 16) & 0xff) * partB_brightness[i - 1] / 255;
-					j++;
-					count++;
 				}
-			}
-
-			while (i < indexB_t) {
 				array[count].light.time = partB_time[i];
-				array[count].light.red = array[count - 1].light.red * partB_brightness[i] / 255;
-				array[count].light.green = array[count - 1].light.green * partB_brightness[i] / 255;
-				array[count].light.blue = array[count - 1].light.blue * partB_brightness[i] / 255;
-				i++;
-				count++;
-			}
-
-			while (j < indexB_c) {
-				array[count].light.time = partB_color_time[j];
-				array[count].light.red = (partB_color[j] & 0xff) * partB_brightness[indexB_t - 1] / 255;
-				array[count].light.green = ((partB_color[j] >> 8) & 0xff) * partB_brightness[indexB_t - 1] / 255;
-				array[count].light.blue = ((partB_color[j] >> 16) & 0xff) * partB_brightness[indexB_t - 1] / 255;
-				j++;
+				array[count].light.red = (partB_color[j] & 0xff) * partB_brightness[i] / 255;
+				array[count].light.green = ((partB_color[j] >> 8) & 0xff) * partB_brightness[i] / 255;
+				array[count].light.blue = ((partB_color[j] >> 16) & 0xff) * partB_brightness[i] / 255;
 				count++;
 			}
 			indexB_t = count;
@@ -653,47 +572,14 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 			break;
 
 		case partC:
-			while (i < indexC_t && j < indexC_c) {
-				if (partC_time[i] == partC_color_time[j]) {
-					array[count].light.time = partC_time[i];
-					array[count].light.red = (partC_color[j] & 0xff) * partC_brightness[i] / 255;
-					array[count].light.green = ((partC_color[j] >> 8) & 0xff) * partC_brightness[i] / 255;
-					array[count].light.blue = ((partC_color[j] >> 16) & 0xff) * partC_brightness[i] / 255;
-					i++;
+			for (i = 0, j = 0; i < indexC_t; i++) {
+				while ((j < indexC_c - 1) && (partC_time[i] >= partC_color_time[j + 1])) {
 					j++;
-					count++;
-				} else if (partC_time[i] < partC_color_time[j]) {
-					array[count].light.time = partC_time[i];
-					array[count].light.red = array[count - 1].light.red * partC_brightness[i] / 255;
-					array[count].light.green = array[count - 1].light.green * partC_brightness[i] / 255;
-					array[count].light.blue = array[count - 1].light.blue * partC_brightness[i] / 255;
-					i++;
-					count++;
-				} else {
-					array[count].light.time = partC_color_time[j];
-					array[count].light.red = (partC_color[j] & 0xff) * partC_brightness[i - 1] / 255;
-					array[count].light.green = ((partC_color[j] >> 8) & 0xff) * partC_brightness[i - 1] / 255;
-					array[count].light.blue = ((partC_color[j] >> 16) & 0xff) * partC_brightness[i - 1] / 255;
-					j++;
-					count++;
 				}
-			}
-
-			while (i < indexC_t) {
 				array[count].light.time = partC_time[i];
-				array[count].light.red = array[count - 1].light.red * partC_brightness[i] / 255;
-				array[count].light.green = array[count - 1].light.green * partC_brightness[i] / 255;
-				array[count].light.blue = array[count - 1].light.blue * partC_brightness[i] / 255;
-				i++;
-				count++;
-			}
-
-			while (j < indexC_c) {
-				array[count].light.time = partC_color_time[j];
-				array[count].light.red = ((partC_color[j] & 0xff)) * partC_brightness[indexC_t - 1] / 255;
-				array[count].light.green = ((partC_color[j] >> 8) & 0xff) * partC_brightness[indexC_t - 1] / 255;
-				array[count].light.blue = ((partC_color[j] >> 16) & 0xff) * partC_brightness[indexC_t - 1] / 255;
-				j++;
+				array[count].light.red = (partC_color[j] & 0xff) * partC_brightness[i] / 255;
+				array[count].light.green = ((partC_color[j] >> 8) & 0xff) * partC_brightness[i] / 255;
+				array[count].light.blue = ((partC_color[j] >> 16) & 0xff) * partC_brightness[i] / 255;
 				count++;
 			}
 			indexC_t = count;
@@ -701,47 +587,14 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 			break;
 
 		case partD:
-			while (i < indexD_t && j < indexD_c) {
-				if (partD_time[i] == partD_color_time[j]) {
-					array[count].light.time = partD_time[i];
-					array[count].light.red = (partD_color[j] & 0xff) * partD_brightness[i] / 255;
-					array[count].light.green = ((partD_color[j] >> 8) & 0xff) * partD_brightness[i] / 255;
-					array[count].light.blue = ((partD_color[j] >> 16) & 0xff) * partD_brightness[i] / 255;
-					i++;
+			for (i = 0, j = 0; i < indexD_t; i++) {
+				while ((j < indexD_c - 1) && (partD_time[i] >= partD_color_time[j + 1])) {
 					j++;
-					count++;
-				} else if (partD_time[i] < partD_color_time[j]) {
-					array[count].light.time = partD_time[i];
-					array[count].light.red = array[count - 1].light.red * partD_brightness[i] / 255;
-					array[count].light.green = array[count - 1].light.green * partD_brightness[i] / 255;
-					array[count].light.blue = array[count - 1].light.blue * partD_brightness[i] / 255;
-					i++;
-					count++;
-				} else {
-					array[count].light.time = partD_color_time[j];
-					array[count].light.red = (partD_color[j] & 0xff) * partD_brightness[i - 1] / 255;
-					array[count].light.green = ((partD_color[j] >> 8) & 0xff) * partD_brightness[i - 1] / 255;
-					array[count].light.blue = ((partD_color[j] >> 16) & 0xff) * partD_brightness[i - 1] / 255;
-					j++;
-					count++;
 				}
-			}
-
-			while (i < indexD_t) {
 				array[count].light.time = partD_time[i];
-				array[count].light.red = array[count - 1].light.red * partD_brightness[i] / 255;
-				array[count].light.green = array[count - 1].light.green * partD_brightness[i] / 255;
-				array[count].light.blue = array[count - 1].light.blue * partD_brightness[i] / 255;
-				i++;
-				count++;
-			}
-
-			while (j < indexD_c) {
-				array[count].light.time = partD_color_time[j];
-				array[count].light.red = (partD_color[j] & 0xff) * partD_brightness[indexD_t - 1] / 255;
-				array[count].light.green = ((partD_color[j] >> 8) & 0xff) * partD_brightness[indexD_t - 1] / 255;
-				array[count].light.blue = ((partD_color[j] >> 16) & 0xff) * partD_brightness[indexD_t - 1] / 255;
-				j++;
+				array[count].light.red = (partD_color[j] & 0xff) * partD_brightness[i] / 255;
+				array[count].light.green = ((partD_color[j] >> 8) & 0xff) * partD_brightness[i] / 255;
+				array[count].light.blue = ((partD_color[j] >> 16) & 0xff) * partD_brightness[i] / 255;
 				count++;
 			}
 			indexD_t = count;
@@ -749,47 +602,14 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 			break;
 
 		case partE:
-			while (i < indexE_t && j < indexE_c) {
-				if (partE_time[i] == partE_color_time[j]) {
-					array[count].light.time = partE_time[i];
-					array[count].light.red = (partE_color[j] & 0xff) * partE_brightness[i] / 255;
-					array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partE_brightness[i] / 255;
-					array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partE_brightness[i] / 255;
-					i++;
+			for (i = 0, j = 0; i < indexE_t; i++) {
+				while ((j < indexE_c - 1) && (partE_time[i] >= partE_color_time[j + 1])) {
 					j++;
-					count++;
-				} else if (partE_time[i] < partE_color_time[j]) {
-					array[count].light.time = partE_time[i];
-					array[count].light.red = array[count - 1].light.red * partE_brightness[i] / 255;
-					array[count].light.green = array[count - 1].light.green * partE_brightness[i] / 255;
-					array[count].light.blue = array[count - 1].light.blue * partE_brightness[i] / 255;
-					i++;
-					count++;
-				} else {
-					array[count].light.time = partE_color_time[j];
-					array[count].light.red = (partE_color[j] & 0xff) * partE_brightness[i - 1] / 255;
-					array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partE_brightness[i - 1] / 255;
-					array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partE_brightness[i - 1] / 255;
-					j++;
-					count++;
 				}
-			}
-
-			while (i < indexE_t) {
 				array[count].light.time = partE_time[i];
-				array[count].light.red = array[count - 1].light.red * partE_brightness[i] / 255;
-				array[count].light.green = array[count - 1].light.green * partE_brightness[i] / 255;
-				array[count].light.blue = array[count - 1].light.blue * partE_brightness[i] / 255;
-				i++;
-				count++;
-			}
-
-			while (j < indexE_c) {
-				array[count].light.time = partE_color_time[j];
-				array[count].light.red = (partE_color[j] & 0xff) * partD_brightness[indexE_t - 1] / 255;
-				array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partD_brightness[indexE_t - 1] / 255;
-				array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partD_brightness[indexE_t - 1] / 255;
-				j++;
+				array[count].light.red = (partE_color[j] & 0xff) * partE_brightness[i] / 255;
+				array[count].light.green = ((partE_color[j] >> 8) & 0xff) * partE_brightness[i] / 255;
+				array[count].light.blue = ((partE_color[j] >> 16) & 0xff) * partE_brightness[i] / 255;
 				count++;
 			}
 			indexE_t = count;
@@ -820,8 +640,8 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 						i++;
 						count++;
 					} else if (partF_brightness[i - 1] == 0) {	// turn on
-						printf("line 809: turn on command should be "
-							   "accompanied with lyrics\n");
+						// printf("line 809: turn on command should be "
+						//	   "accompanied with lyrics\n");
 						i++;
 					} else {
 						printf("line 813: global brightness shouldn't effect strip\n");
