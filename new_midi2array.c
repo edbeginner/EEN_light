@@ -215,7 +215,6 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 		// the second data byte does not matter
 		fread(&dump, 1, 1, *midi_input);
-		*data = partF;
 		return 0;
 
 	case 1: // turn on light
@@ -229,8 +228,8 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 
 	case 70: // fallthrough
 	case 71: // data for these two events are at most 4 bytes
-		for (i = 0; i < data_length; i++) {
-			fread(&data_buffer[i], 1, 1, *midi_input);
+		for (; data_length > 0; data_length--) {
+			fread(&data_buffer[data_length - 1], 1, 1, *midi_input);
 		}
 		break;
 
@@ -293,7 +292,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
             if (data_buffer[0] == partF) {
                 fread(&tmp[0], 1, 1, *midi_input);
 			    fread(&tmp[1], 1, 1, *midi_input);
-			    data_buffer[4] = ascii_hex2value(tmp[0],tmp[1]);
+			    data_buffer[4] = ascii_hex2value(tmp[0], tmp[1]);
             }
 		}
 		break;
@@ -334,8 +333,8 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		time signature : no use
     */
     
-    *data = ((uint64_t)data_buffer[4] << 32) | (data_buffer[3] << 24)
-            | (data_buffer[2] << 16) | (data_buffer[1] << 8) | (data_buffer[0]);
+    *data = ((uint64_t)data_buffer[4] << 32) | ((uint64_t)data_buffer[3] << 24)
+            | ((uint64_t)data_buffer[2] << 16) | ((uint64_t)data_buffer[1] << 8) | ((uint64_t)data_buffer[0]);
 
 	return 0;
 }
@@ -346,35 +345,30 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 	case 0:		// note off (turn off light)
 		switch (data & 0xff) {
 			case partA:
-				printf("partA shouldn't be turned off\n");
 				partA_time[indexA_t] = (uint32_t)time_in_us;
 				partA_brightness[indexA_t] = 0;
 				indexA_t++;
 				break;
 
 			case partB:
-				printf("partB shouldn't be turned off\n");
 				partB_time[indexB_t] = (uint32_t)time_in_us;
 				partB_brightness[indexB_t] = 0;
 				indexB_t++;
 				break;
 
 			case partC:
-				printf("partC shouldn't be turned off\n");
 				partC_time[indexC_t] = (uint32_t)time_in_us;
 				partC_brightness[indexC_t] = 0;
 				indexC_t++;
 				break;
 
 			case partD:
-				printf("partD shouldn't be turned off\n");
 				partD_time[indexD_t] = (uint32_t)time_in_us;
 				partD_brightness[indexD_t] = 0;
 				indexD_t++;
 				break;
 
 			case partE:
-				printf("partE shouldn't be turned off\n");
 				partE_time[indexE_t] = (uint32_t)time_in_us;
 				partE_brightness[indexE_t] = 0;
 				indexE_t++;
@@ -387,7 +381,7 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 				break;
 
 			default:
-				printf("line 373...\n");
+				printf("ignore turn off...\n");
 		}
 		break;
 	
@@ -518,7 +512,7 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 			case partF:
 				partF_color_time[indexF_c] = (uint32_t)time_in_us;
 				partF_color[indexF_c] = ((data >> 8) & 0xffffff);
-				partF_SPX[indexF_c] = (data >> 32);
+				partF_SPX[indexF_c] = (data >> 32) & 0xff;
 				indexF_c++;
 				break;
 		}
@@ -616,41 +610,19 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 			break;
 		
-		// ! think care about this one...
 		case partF:
-			while (i < indexF_t && j < indexF_c) {
-				if (partF_time[i] == partF_color_time[j]) {
-					array[count].strip.time = partF_time[i];
-					array[count].strip.red = (partF_color[j] & 0xff) * partF_brightness[i] / 255;
-					array[count].strip.green = ((partF_color[j] >> 8) & 0xff) * partF_brightness[i] / 255;
-					array[count].strip.blue = ((partF_color[j] >> 16) & 0xff) * partF_brightness[i] / 255;
-					array[count].strip.SPX_type = partF_SPX[j];
-					array[count].strip.SPX_duration = partF_color_time[j + 1] - partF_color_time[j];
-					i++;
-					j++;
-					count++;
-				} else if (partF_time[i] < partF_color_time[j]) {	// store brightness info (just turn on or off)
-					if (partF_brightness[i] == 0) {		// turn off
-						array[count].strip.time = partF_time[i];
-						array[count].strip.red = 0;
-						array[count].strip.green = 0;
-						array[count].strip.blue = 0;
-						array[count].strip.SPX_type = 0;
-						array[count].strip.SPX_duration = 0;
-						i++;
-						count++;
-					} else if (partF_brightness[i - 1] == 0) {	// turn on
-						// printf("line 809: turn on command should be "
-						//	   "accompanied with lyrics\n");
-						i++;
-					} else {
-						printf("line 813: global brightness shouldn't effect strip\n");
-						i++;
-					}
-				} else {	// store color info first maybe this shouldn't happen...
-					printf("line 753: color info and turn on should be paired...\n");
+			for (i = 0, j = 0; i < indexF_t; i++) {
+				while ((j < indexF_c - 1) && (partF_time[i] >= partF_color_time[j + 1])) {
 					j++;
 				}
+				array[count].strip.time = partF_time[i];
+				array[count].strip.red = (partF_color[j] & 0xff) * partF_brightness[i] / 255;
+				array[count].strip.green = ((partF_color[j] >> 8) & 0xff) * partF_brightness[i] / 255;
+				array[count].strip.blue = ((partF_color[j] >> 16) & 0xff) * partF_brightness[i] / 255;
+				// I'm not sure about these logics
+				array[count].strip.SPX_type = partF_SPX[j];
+				array[count].strip.SPX_duration = partF_color_time[j + 1] - partF_color_time[j];
+				count++;
 			}
 
 			indexF_t = count;
