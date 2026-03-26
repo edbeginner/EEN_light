@@ -192,6 +192,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		*event = 126; // unsupported
 		break;
 
+	case 0xa:
 	case 0xe:
 		*event = 127; // unsupported
         break;
@@ -612,6 +613,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 		
 		case partF:
 			for (i = 0, j = 0; i < indexF_t; i++) {
+				int fast, slow;
 				while ((j < indexF_c - 1) && (partF_time[i] >= partF_color_time[j + 1])) {
 					j++;
 				}
@@ -619,9 +621,28 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 				array[count].strip.red = (partF_color[j] & 0xff) * partF_brightness[i] / 255;
 				array[count].strip.green = ((partF_color[j] >> 8) & 0xff) * partF_brightness[i] / 255;
 				array[count].strip.blue = ((partF_color[j] >> 16) & 0xff) * partF_brightness[i] / 255;
-				// I'm not sure about these logics
 				array[count].strip.SPX_type = partF_SPX[j];
-				array[count].strip.SPX_duration = partF_color_time[j + 1] - partF_color_time[j];
+				
+				// Find when this note really turns off (first later entry with brightness = 0)
+				if (partF_brightness[i] > 0) {
+					fast = i + 2;
+					slow = i + 1;
+					// ignore quickly turn on and off (< 0.05 s)
+					while (fast < indexF_t && partF_time[fast] - partF_time[slow] < 50000) {
+						fast += 2;
+						slow += 2;
+					}
+
+					if (slow < indexF_t) {
+						array[count].strip.SPX_duration = (partF_time[slow] - partF_time[i]) / 1000;
+					} else {
+						array[count].strip.SPX_duration = 0;
+					}
+
+					i = slow;	// skip to next info
+				} else {
+					array[count].strip.SPX_duration = 0;
+				}
 				count++;
 			}
 
