@@ -659,11 +659,13 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 
 void write2file(FILE **output, char name, ws2812 *array) {
 	int i;	// loop index
+	int new;	// for identation
 
 	switch (name) {
 		case 'A':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexA_t);
 			for (i = 0; i < indexA_t - 1; i++) {
+				new = 0;
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
@@ -671,74 +673,105 @@ void write2file(FILE **output, char name, ws2812 *array) {
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
 					fprintf(*output, "\n");
+					new = 1;
 				}
 			}
-			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			if (new == 1) {
+				fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			} else {
+				fprintf(*output, "{.light = {-1, 0, 0, 0}}};\n\n");
+			}
+
 			break;
 
 		case 'B':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexB_t);
 			for (i = 0; i < indexB_t - 1; i++) {
+				new = 0;
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
 				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
+					new = 1;
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			if (new == 1) {
+				fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			} else {
+				fprintf(*output, "{.light = {-1, 0, 0, 0}}};\n\n");
+			}
 			break;
 
 		case 'C':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexC_t);
 			for (i = 0; i < indexC_t - 1; i++) {
+				new = 0;
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
 				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
+					new = 1;
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			if (new == 1) {
+				fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			} else {
+				fprintf(*output, "{.light = {-1, 0, 0, 0}}};\n\n");
+			}
 			break;
 
 		case 'D':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexD_t);
 			for (i = 0; i < indexD_t - 1; i++) {
+				new = 0;
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
 				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
+					new = 1;
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			if (new == 1) {
+				fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			} else {
+				fprintf(*output, "{.light = {-1, 0, 0, 0}}};\n\n");
+			}
 			break;
 
 		case 'E':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexE_t);
 			for (i = 0; i < indexE_t - 1; i++) {
+				new = 0;
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
 				fprintf(*output, "{.light = {%d, %u, %u, %u}}, ", array[i].light.time, array[i].light.red,
 																array[i].light.green, array[i].light.blue);
 				if (i % 4 == 3) {
+					new = 1;
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			if (new == 1) {
+				fprintf(*output, "\t{.light = {-1, 0, 0, 0}}};\n\n");
+			} else {
+				fprintf(*output, "{.light = {-1, 0, 0, 0}}};\n\n");
+			}
 			break;
 
 		case 'F':
 			fprintf(*output, "const ws2812 %c[%d] = {\n", name, indexF_t);
 			for (i = 0; i < indexF_t - 1; i++) {
+				new = 0;
 				if (i % 4 == 0) {
 					fprintf(*output, "\t");
 				}
@@ -746,10 +779,15 @@ void write2file(FILE **output, char name, ws2812 *array) {
 																		array[i].strip.green, array[i].strip.blue,
 																		array[i].strip.SPX_type, array[i].strip.SPX_duration);
 				if (i % 4 == 3) {
+					new = 1;
 					fprintf(*output, "\n");
 				}
 			}
-			fprintf(*output, "\t{.strip = {-1, 0, 0, 0, 0}}};\n\n");
+			if (new == 1) {
+				fprintf(*output, "\t{.strip = {-1, 0, 0, 0, 0, 0}}};\n\n");
+			} else {
+				fprintf(*output, "{.strip = {-1, 0, 0, 0, 0, 0}}};\n\n");
+			}
 			break;
 	}
 }
