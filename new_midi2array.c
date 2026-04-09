@@ -23,44 +23,44 @@
 
 static uint32_t partA_time[ARRAY_SIZE] = {0};			// time array
 static uint32_t partA_color_time[ARRAY_SIZE] = {0};		// time to change color
-static uint32_t partA_color[ARRAY_SIZE];				// color data
+static uint32_t partA_color[ARRAY_SIZE] = {0x0faeff};	// color data
 static uint8_t partA_brightness[ARRAY_SIZE] = {0};		// brightness of light
 static uint16_t indexA_c = 1;							// index of color arrays (color and color_time)
 static uint16_t indexA_t = 1;							// index of time array
 
 static uint32_t partB_time[ARRAY_SIZE] = {0};
 static uint32_t partB_color_time[ARRAY_SIZE] = {0};
-static uint32_t partB_color[ARRAY_SIZE];				// there might be some default colors
+static uint32_t partB_color[ARRAY_SIZE] = {0xf30fff};	// there might be some default colors
 static uint8_t partB_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexB_c = 1;
 static uint16_t indexB_t = 1;							// index time also indicates the len of array in the end
 
 static uint32_t partC_time[ARRAY_SIZE] = {0};
 static uint32_t partC_color_time[ARRAY_SIZE] = {0};
-static uint32_t partC_color[ARRAY_SIZE];
+static uint32_t partC_color[ARRAY_SIZE] = {0xffffff};
 static uint8_t partC_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexC_c = 1;
 static uint16_t indexC_t = 1;
 
 static uint32_t partD_time[ARRAY_SIZE] = {0};
 static uint32_t partD_color_time[ARRAY_SIZE] = {0};
-static uint32_t partD_color[ARRAY_SIZE];
+static uint32_t partD_color[ARRAY_SIZE] = {0x78ff1a};
 static uint8_t partD_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexD_c = 1;
 static uint16_t indexD_t = 1;
 
 static uint32_t partE_time[ARRAY_SIZE] = {0};
 static uint32_t partE_color_time[ARRAY_SIZE] = {0};
-static uint32_t partE_color[ARRAY_SIZE];
+static uint32_t partE_color[ARRAY_SIZE] = {0xff971c};
 static uint8_t partE_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexE_c = 1;
 static uint16_t indexE_t = 1;
 
 static uint32_t partF_time[ARRAY_SIZE] = {0};
 static uint32_t partF_color_time[ARRAY_SIZE] = {0};
-static uint32_t partF_color[ARRAY_SIZE];
+static uint32_t partF_color[ARRAY_SIZE] = {0xffffff};
 static uint8_t partF_brightness[ARRAY_SIZE] = {0};
-static uint8_t partF_SPX[ARRAY_SIZE] = {0};
+static uint8_t partF_SPX[ARRAY_SIZE] = {01};
 static uint16_t indexF_c = 1;
 static uint16_t indexF_t = 1;
 
@@ -426,7 +426,7 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 
 			default:
 				printf("%lu ", data & 0xff);
-				printf("line 433: turn something else on...\n");
+				printf("line 429: turn something else on...\n");
 		}
 		break;
 	

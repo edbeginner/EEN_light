@@ -6,20 +6,6 @@
 
 int main(int argc, char **argv)
 {
-    /* 
-        TODO: read argument
-        TODO: handle header chunk and get ticks_per_qnote
-        TODO: get us_per_tick
-
-        while (end condition) {
-            get time
-            save data
-        }
-        data(array) to struct
-        fprintf(include ws2812 struture)
-        write to output file
-    */
-
     FILE *input, *output;
 	float time_in_us = 0;
 	uint64_t data = 0;
@@ -27,6 +13,7 @@ int main(int argc, char **argv)
 	float us_per_tick = 1;
 	int ticks_per_qnote = 1;
 	char input_filename[FILENAME_SIZE];
+    char output_filename[FILENAME_SIZE + 3];
 
     ws2812 part_A[ARRAY_SIZE];
     ws2812 part_B[ARRAY_SIZE];
@@ -42,8 +29,9 @@ int main(int argc, char **argv)
 	}
 
     strncpy(input_filename, argv[1], FILENAME_SIZE);
+    snprintf(output_filename, sizeof(output_filename), "%s.h", input_filename);
 	input = fopen(input_filename, "r"); /*open the file*/
-	output = fopen("out.h", "w"); /*open the file*/
+	output = fopen(output_filename, "w"); /*open the file*/
 
     if (input == NULL) {
         printf("failed to open input file: %s\n", input_filename);
