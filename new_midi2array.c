@@ -382,6 +382,7 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 				break;
 
 			default:
+				printf("%lu ", data & 0xff);
 				printf("ignore turn off...\n");
 		}
 		break;
@@ -478,7 +479,7 @@ void saveData(const uint64_t data, const uint8_t event, const float time_in_us,
 
 	// case 72 should not happen cause it's the end of the track 
 
-	case 73:	// lyrics (change color, also the initialize brightness of single light)
+	case 73:	// lyrics (change color, also initialize brightness of single light)
 		switch (data & 0xff) {
 			case partA:
 				partA_color_time[indexA_c] = (uint32_t)time_in_us;
@@ -628,7 +629,7 @@ int data2struct(const char name, ws2812 array[ARRAY_SIZE]) {
 					fast = i + 2;
 					slow = i + 1;
 					// ignore quickly turn on and off (< 0.05 s)
-					while (fast < indexF_t && partF_time[fast] - partF_time[slow] < 50000) {
+					while (fast < indexF_t && partF_time[fast] - partF_time[slow] < 500000) {
 						fast += 2;
 						slow += 2;
 					}
