@@ -28,10 +28,22 @@ int main(int argc, char **argv)
 		return 0;
 	}
 
-    strncpy(input_filename, argv[1], FILENAME_SIZE);
-    snprintf(output_filename, sizeof(output_filename), "%s.h", input_filename);
-	input = fopen(input_filename, "r"); /*open the file*/
-	output = fopen(output_filename, "w"); /*open the file*/
+    strncpy(input_filename, argv[1], FILENAME_SIZE - 1);
+    input_filename[FILENAME_SIZE - 1] = '\0';
+
+    strncpy(output_filename, input_filename, sizeof(output_filename) - 1);
+    output_filename[sizeof(output_filename) - 1] = '\0';
+
+    char *dot = strrchr(output_filename, '.');
+
+    if (dot != NULL) {
+        strcpy(dot, ".h");
+    } else {
+        strncat(output_filename, ".h", sizeof(output_filename) - strlen(output_filename) - 1);
+    }
+
+    input = fopen(input_filename, "r"); 
+    output = fopen(output_filename, "w");
 
     if (input == NULL) {
         printf("failed to open input file: %s\n", input_filename);
@@ -42,7 +54,7 @@ int main(int argc, char **argv)
     }
 
     if (output == NULL) {
-        printf("failed to open output file: out.h\n");
+        printf("failed to open output file: %s\n", output_filename);
         fclose(input);
         return 1;
     }
