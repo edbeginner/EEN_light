@@ -5,6 +5,15 @@
 #include "stdint.h"
 #include "string.h"
 
+// ! the sequence is bgr!
+#define COLORA 0xffae0f
+#define COLORB 0xff0ff3
+#define COLORC 0xffffff
+#define COLORD 0x1a78ff
+#define COLORE 0x1c97ff
+#define COLORF 0xffffff
+
+
 /*
 	these arrays shouldn't be used by user through main.c; instead, they serve
 	as waystations to connect midi files to self-define structure (we need to
@@ -21,42 +30,42 @@
 
 static uint32_t partA_time[ARRAY_SIZE] = {0};			// time array
 static uint32_t partA_color_time[ARRAY_SIZE] = {0};		// time to change color
-static uint32_t partA_color[ARRAY_SIZE] = {0x0faeff};	// color data
+static uint32_t partA_color[ARRAY_SIZE] = {COLORA};	// color data
 static uint8_t partA_brightness[ARRAY_SIZE] = {0};		// brightness of light
 static uint16_t indexA_c = 1;							// index of color arrays (color and color_time)
 static uint16_t indexA_t = 1;							// index of time array
 
 static uint32_t partB_time[ARRAY_SIZE] = {0};
 static uint32_t partB_color_time[ARRAY_SIZE] = {0};
-static uint32_t partB_color[ARRAY_SIZE] = {0xf30fff};	// there might be some default colors
+static uint32_t partB_color[ARRAY_SIZE] = {COLORB};	// there might be some default colors
 static uint8_t partB_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexB_c = 1;
 static uint16_t indexB_t = 1;							// index time also indicates the len of array in the end
 
 static uint32_t partC_time[ARRAY_SIZE] = {0};
 static uint32_t partC_color_time[ARRAY_SIZE] = {0};
-static uint32_t partC_color[ARRAY_SIZE] = {0xffffff};
+static uint32_t partC_color[ARRAY_SIZE] = {COLORC};
 static uint8_t partC_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexC_c = 1;
 static uint16_t indexC_t = 1;
 
 static uint32_t partD_time[ARRAY_SIZE] = {0};
 static uint32_t partD_color_time[ARRAY_SIZE] = {0};
-static uint32_t partD_color[ARRAY_SIZE] = {0x78ff1a};
+static uint32_t partD_color[ARRAY_SIZE] = {COLORD};
 static uint8_t partD_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexD_c = 1;
 static uint16_t indexD_t = 1;
 
 static uint32_t partE_time[ARRAY_SIZE] = {0};
 static uint32_t partE_color_time[ARRAY_SIZE] = {0};
-static uint32_t partE_color[ARRAY_SIZE] = {0xff971c};
+static uint32_t partE_color[ARRAY_SIZE] = {COLORE};
 static uint8_t partE_brightness[ARRAY_SIZE] = {0};
 static uint16_t indexE_c = 1;
 static uint16_t indexE_t = 1;
 
 static uint32_t partF_time[ARRAY_SIZE] = {0};
 static uint32_t partF_color_time[ARRAY_SIZE] = {0};
-static uint32_t partF_color[ARRAY_SIZE] = {0xffffff};
+static uint32_t partF_color[ARRAY_SIZE] = {COLORF};
 static uint8_t partF_brightness[ARRAY_SIZE] = {0};
 static uint8_t partF_SPX[ARRAY_SIZE] = {01};
 static uint16_t indexF_c = 1;
@@ -232,12 +241,14 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 		}
 		break;
 
+	// ! midi gives me 9 bytes???? wtfffffffff
 	case 73: // lyrics, only used to change color
-		if (data_length != 8 && data_length != 10) {  // unsupported
+		if (data_length != 9) {  // unsupported
 			for ( ; data_length > 0; data_length--) {
 				fread(&dump, 1, 1, *midi_input);
 			}
 			*event = 125;
+			printf("this shouldn't happen\n");
 			break;
 		} else {
 			fread(&data_buffer[0], 1, 1, *midi_input);
@@ -269,6 +280,7 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
 					break;
 				
 				default:
+					printf("weird part lyrics\n");
 					data_buffer[0] = 0;
 			}
 
@@ -289,10 +301,13 @@ uint8_t readEvent(FILE **midi_input, uint64_t *data, uint8_t *event) {
             }
             
             if (data_buffer[0] == partF) {
-                fread(&tmp[0], 1, 1, *midi_input);
-			    fread(&tmp[1], 1, 1, *midi_input);
-			    data_buffer[4] = ascii_hex2value(tmp[0], tmp[1]);
+                // fread(&tmp[0], 1, 1, *midi_input);
+			    // fread(&tmp[1], 1, 1, *midi_input);
+			    // data_buffer[4] = ascii_hex2value(tmp[0], tmp[1]);
+				data_buffer[4] = 1;
             }
+			
+			fread(&dump, 1, 1, *midi_input); // dump " "
 		}
 		break;
 
@@ -792,11 +807,11 @@ void write2file(FILE **output, char name, ws2812 *array) {
 }
 
 uint8_t ascii_hex2value(uint8_t hex1, uint8_t hex2) {
-	hex1 = (hex1 <= '9') ? (hex1 - '0') :
-		   (hex1 <= 'f') ? (hex1 - 'a' + 10) : (hex1 - 'A' + 10);
+	hex1 = (hex1 >= '0' && hex1 <= '9') ? (hex1 - '0') :
+		   (hex1 >= 'a' && hex1 <= 'f') ? (hex1 - 'a' + 10) : (hex1 - 'A' + 10);
 	
-	hex2 = (hex2 <= '9') ? (hex2 - '0') :
-		   (hex2 <= 'f') ? (hex2 - 'a' + 10) : (hex2 - 'A' + 10);
+	hex2 = (hex2 >= '0' && hex2 <= '9') ? (hex2 - '0') :
+		   (hex2 >= 'a' && hex2 <= 'f') ? (hex2 - 'a' + 10) : (hex2 - 'A' + 10);
 
 	return (hex1 << 4) | hex2;
 }
