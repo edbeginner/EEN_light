@@ -1,5 +1,3 @@
-// TODO unsolve: 718, 732
-
 #include "new_midi2array.h"
 #include "structure_of_ws2812.h"
 #include "new_config.h"
